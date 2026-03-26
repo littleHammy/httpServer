@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>聊天室</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            height: 90vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .login-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .login-box {
+            background: white;
+            padding: 50px 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-box h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #333;
+            font-size: 28px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .error-message {
+            color: #e74c3c;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .chat-container {
+            display: none;
+            height: 100%;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h2 {
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .chat-header h2 button {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-header h2 button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .admin-badge {
+            background: #f39c12;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info span {
+            font-weight: 500;
+        }
+
+        .user-info .btn-logout {
+            padding: 8px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .user-info .btn-logout:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .online-users {
+            background: #f8f9fa;
+            padding: 12px 25px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .message-list {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: #f5f7fa;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 14px 18px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.own {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.other {
+            align-self: flex-start;
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-header {
+            font-size: 12px;
+            margin-bottom: 6px;
+            opacity: 0.8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .message-header .delete-btn {
+            background: none;
+            border: none;
+            color: #e74c3c;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+
+        .message:hover .message-header .delete-btn {
+            opacity: 1;
+        }
+
+        .message-header .delete-btn:hover {
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .message-content {
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .message-content img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 12px;
+            margin-top: 8px;
+        }
+
+        .message-form {
+            display: flex;
+            padding: 20px 25px;
+            border-top: 1px solid #eee;
+            gap: 15px;
+            align-items: flex-end;
+            background: white;
+        }
+
+        .image-upload {
+            position: relative;
+        }
+
+        .image-upload input[type="file"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .image-upload button {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #f0f0f0;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s;
+        }
+
+        .image-upload button:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .message-form input[type="text"] {
+            flex: 1;
+            padding: 14px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 24px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .message-form input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .message-form button[type="submit"] {
+            padding: 14px 28px;
+            border-radius: 24px;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 35px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-content h3 {
+            margin-bottom: 25px;
+            color: #333;
+            font-size: 22px;
+        }
+
+        .modal-content .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+            justify-content: flex-end;
+        }
+
+        .modal-content .btn-cancel {
+            background: #95a5a6;
+        }
+
+        .modal-content .btn-cancel:hover {
+            background: #7f8c8d;
+        }
+
+        .user-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .user-item:last-child {
+            border-bottom: none;
+        }
+
+        .user-item .user-info {
+            flex: 1;
+        }
+
+        .user-item .user-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .user-item .user-account {
+            font-size: 13px;
+            color: #999;
+        }
+
+        .user-item .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+
+        .user-item .status-badge.activated {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .user-item .status-badge.not-activated {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .user-item .status-badge.admin {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .user-item .btn-activate {
+            padding: 6px 14px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .user-item .btn-activate:hover {
+            background: #218838;
+        }
+
+        .user-item .btn-deactivate {
+            padding: 6px 14px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .user-item .btn-deactivate:hover {
+            background: #c82333;
+        }
+
+        .user-item .btn-delete {
+            padding: 6px 14px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .user-item .btn-delete:hover {
+            background: #5a6268;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                height: 95vh;
+                border-radius: 15px;
+            }
+
+            .login-container {
+                padding: 30px 20px;
+            }
+
+            .login-box {
+                padding: 25px 20px;
+            }
+
+            .login-box h1 {
+                font-size: 22px;
+                margin-bottom: 25px;
+            }
+
+            .form-group {
+                margin-bottom: 18px;
+            }
+
+            .form-group label {
+                font-size: 13px;
+            }
+
+            .form-group input {
+                padding: 12px;
+                font-size: 14px;
+            }
+
+            .btn {
+                padding: 12px;
+                font-size: 14px;
+            }
+
+            .message {
+                max-width: 85%;
+                padding: 10px 14px;
+            }
+
+            .message-header {
+                font-size: 11px;
+            }
+
+            .message-content {
+                font-size: 14px;
+            }
+
+            .message-form {
+                padding: 12px 10px;
+                gap: 8px;
+            }
+
+            .message-form input[type="text"] {
+                padding: 10px 14px;
+                font-size: 14px;
+            }
+
+            .message-form button[type="submit"] {
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+
+            .image-upload button {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+
+            .chat-header {
+                padding: 10px 12px;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .chat-header h2 {
+                font-size: 16px;
+                order: 1;
+            }
+
+            .chat-header h2 button {
+                width: 28px;
+                height: 28px;
+                font-size: 14px;
+            }
+
+            .admin-badge {
+                font-size: 10px;
+                padding: 2px 8px;
+                order: 2;
+            }
+
+            .user-info {
+                order: 3;
+                width: 100%;
+                justify-content: space-between;
+                margin-top: 5px;
+                padding-top: 8px;
+                border-top: 1px solid rgba(255,255,255,0.2);
+            }
+
+            .user-info span {
+                font-size: 13px;
+            }
+
+            .user-info .btn-logout {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            .online-users {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+
+            .message-list {
+                padding: 15px 10px;
+                gap: 10px;
+            }
+
+            .modal-content {
+                padding: 20px;
+                margin: 20px;
+            }
+
+            .modal-content h3 {
+                font-size: 18px;
+                margin-bottom: 20px;
+            }
+
+            .user-list {
+                max-height: 300px;
+            }
+
+            .user-item {
+                padding: 12px 8px;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .user-item .user-info {
+                border-top: none;
+                padding-top: 0;
+                margin-top: 0;
+                width: auto;
+            }
+
+            .user-item .user-name {
+                font-size: 14px;
+            }
+
+            .user-item .user-account {
+                font-size: 12px;
+            }
+
+            .user-item .status-badge {
+                font-size: 11px;
+                padding: 3px 8px;
+            }
+
+            .user-item .btn-activate,
+            .user-item .btn-deactivate,
+            .user-item .btn-delete {
+                padding: 5px 10px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-container" id="loginContainer">
+            <div class="login-box">
+                <h1><i class="fas fa-comments"></i> 聊天室</h1>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> 姓名</label>
+                        <input type="text" id="name" name="name" required placeholder="请输入您的姓名">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-id-card"></i> 账号</label>
+                        <input type="text" id="account" name="account" required placeholder="请输入您的账号">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-lock"></i> 密码</label>
+                        <input type="password" id="password" name="password" required placeholder="请输入您的密码">
+                    </div>
+                    <button type="submit" class="btn">登录 / 注册</button>
+                    <div class="error-message" id="loginError"></div>
+                </form>
+            </div>
+        </div>
+
+        <div class="chat-container" id="chatContainer">
+            <div class="chat-header">
+                <h2>
+                    <i class="fas fa-comments"></i> 聊天室
+                    <button onclick="openSettings()" title="设置"><i class="fas fa-cog"></i></button>
+                    <span class="admin-badge" id="adminBadge" style="display: none;">管理员</span>
+                </h2>
+                <div class="user-info">
+                    <span id="currentUser"></span>
+                    <button class="btn-logout" onclick="logout()">退出</button>
+                </div>
+            </div>
+            <div class="online-users">
+                <i class="fas fa-users"></i> 在线用户: <span id="onlineUserCount">0</span>
+            </div>
+            <div class="message-list" id="messageList">
+                <div class="loading">加载消息中...</div>
+            </div>
+            <form class="message-form" id="messageForm">
+                <div class="image-upload">
+                    <input type="file" id="imageInput" accept="image/*">
+                    <button type="button"><i class="fas fa-image"></i></button>
+                </div>
+                <input type="text" id="messageInput" placeholder="输入消息..." required>
+                <button type="submit" class="btn">发送</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h3><i class="fas fa-cog"></i> 设置</h3>
+            <form id="changePasswordForm">
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> 旧密码</label>
+                    <input type="password" id="oldPassword" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> 新密码</label>
+                    <input type="password" id="newPassword" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> 确认新密码</label>
+                    <input type="password" id="confirmPassword" required>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-cancel" onclick="closeSettings()">取消</button>
+                    <button type="submit" class="btn">保存</button>
+                </div>
+            </form>
+            <div class="error-message" id="passwordError"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="adminPanel">
+        <div class="modal-content">
+            <h3><i class="fas fa-users-cog"></i> 用户管理</h3>
+            <div class="user-list" id="userList">
+                <div class="loading">加载用户列表中...</div>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-cancel" onclick="closeAdminPanel()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let currentAccount = null;
+        let isAdmin = false;
+        let messageRefreshInterval = null;
+        let cachedMessages = [];
+
+        const loginContainer = document.getElementById('loginContainer');
+        const chatContainer = document.getElementById('chatContainer');
+        const loginForm = document.getElementById('loginForm');
+        const loginError = document.getElementById('loginError');
+        const messageList = document.getElementById('messageList');
+        const messageForm = document.getElementById('messageForm');
+        const messageInput = document.getElementById('messageInput');
+        const imageInput = document.getElementById('imageInput');
+        const currentUserSpan = document.getElementById('currentUser');
+        const onlineUserCount = document.getElementById('onlineUserCount');
+        const adminBadge = document.getElementById('adminBadge');
+        const settingsModal = document.getElementById('settingsModal');
+        const adminPanel = document.getElementById('adminPanel');
+        const userList = document.getElementById('userList');
+        const changePasswordForm = document.getElementById('changePasswordForm');
+        const passwordError = document.getElementById('passwordError');
+
+        loginForm.addEventListener('submit', handleLogin);
+        imageInput.addEventListener('change', handleImageUpload);
+        messageForm.addEventListener('submit', handleMessageSubmit);
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                messageForm.dispatchEvent(new Event('submit'));
+            }
+        });
+        changePasswordForm.addEventListener('submit', handleChangePassword);
+
+        async function checkLoginStatus() {
+            const savedUser = localStorage.getItem('chatUser');
+            if (savedUser) {
+                try {
+                    const user = JSON.parse(savedUser);
+                    const response = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `name=${encodeURIComponent(user.name)}&account=${encodeURIComponent(user.account)}&password=__restore__`
+                    });
+                    const data = await response.json();
+                    if (data.status === 'ok') {
+                        currentUser = user.name;
+                        currentAccount = user.account;
+                        isAdmin = data.isAdmin || false;
+                        currentUserSpan.textContent = currentUser;
+                        adminBadge.style.display = isAdmin ? 'inline-block' : 'none';
+                        loginContainer.style.display = 'none';
+                        chatContainer.style.display = 'flex';
+                        await loadMessages();
+                        await loadOnlineUsers();
+                        messageRefreshInterval = setInterval(async () => {
+                            await sendHeartbeat();
+                            await loadOnlineUsers();
+                            await loadMessages();
+                        }, 1000);
+                    } else {
+                        localStorage.removeItem('chatUser');
+                    }
+                } catch (e) {
+                    localStorage.removeItem('chatUser');
+                }
+            }
+        }
+
+        checkLoginStatus();
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const name = document.getElementById('name').value.trim();
+            const account = document.getElementById('account').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if (!name || !account || !password) {
+                loginError.textContent = '请填写完整信息';
+                return;
+            }
+
+            try {
+                loginError.textContent = '';
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `name=${encodeURIComponent(name)}&account=${encodeURIComponent(account)}&password=${encodeURIComponent(password)}`
+                });
+                const data = await response.json();
+
+                if (data.status === 'ok') {
+                    currentUser = name;
+                    currentAccount = account;
+                    isAdmin = data.isAdmin || false;
+                    localStorage.setItem('chatUser', JSON.stringify({ name, account, isAdmin }));
+                    currentUserSpan.textContent = currentUser;
+                    adminBadge.style.display = isAdmin ? 'inline-block' : 'none';
+                    loginContainer.style.display = 'none';
+                    chatContainer.style.display = 'flex';
+                    await loadMessages();
+                    await loadOnlineUsers();
+                    messageRefreshInterval = setInterval(async () => {
+                        await sendHeartbeat();
+                        await loadOnlineUsers();
+                        await loadMessages();
+                    }, 1000);
+                } else {
+                    loginError.textContent = data.message;
+                }
+            } catch (error) {
+                loginError.textContent = '登录失败，请重试';
+                console.error(error);
+            }
+        }
+
+        async function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (file && currentUser) {
+                imageInput.value = '';
+                try {
+                    const formData = new FormData();
+                    formData.append('image', file);
+                    const response = await fetch('/api/upload', { method: 'POST', body: formData });
+                    const data = await response.json();
+                    if (data.status === 'ok') {
+                        const imageUrl = data.url;
+                        const content = `<img src="${imageUrl}" alt="图片">`;
+                        await sendMessage(content);
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+        }
+
+        async function handleMessageSubmit(e) {
+            e.preventDefault();
+            const content = messageInput.value.trim();
+            if (content && currentUser) {
+                messageInput.value = '';
+                await sendMessage(content);
+            }
+        }
+
+        async function sendMessage(content) {
+            try {
+                const response = await fetch('/api/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `name=${encodeURIComponent(currentUser)}&content=${encodeURIComponent(content)}`
+                });
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    await loadMessages();
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function loadMessages() {
+            try {
+                const response = await fetch('/api/messages');
+                const messages = await response.json();
+
+                if (messages.length === 0) {
+                    if (cachedMessages.length === 0) {
+                        messageList.innerHTML = '<div class="loading">暂无消息，开始聊天吧！</div>';
+                    }
+                    return;
+                }
+
+                if (JSON.stringify(messages) === JSON.stringify(cachedMessages)) return;
+
+                messageList.innerHTML = '';
+                messages.forEach((msg, index) => {
+                    const div = document.createElement('div');
+                    div.className = `message ${msg.name === currentUser ? 'own' : 'other'}`;
+                    div.innerHTML = `
+                        <div class="message-header">
+                            <span>${msg.name} - ${msg.timestamp}</span>
+                            ${isAdmin ? `<button class="delete-btn" onclick="deleteMessage(${index})">删除</button>` : ''}
+                        </div>
+                        <div class="message-content">${msg.content}</div>
+                    `;
+                    messageList.appendChild(div);
+                });
+
+                cachedMessages = messages;
+                requestAnimationFrame(() => {
+                    messageList.scrollTop = messageList.scrollHeight;
+                });
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function loadOnlineUsers() {
+            try {
+                const response = await fetch('/api/users');
+                const users = await response.json();
+                onlineUserCount.textContent = users.length;
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function sendHeartbeat() {
+            if (currentAccount) {
+                try {
+                    await fetch('/api/heartbeat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `account=${encodeURIComponent(currentAccount)}`
+                    });
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+        }
+
+        function openSettings() {
+            if (isAdmin) {
+                if (confirm('是否进入用户管理？\n\n取消则进入个人设置')) {
+                    openAdminPanel();
+                } else {
+                    settingsModal.style.display = 'flex';
+                }
+            } else {
+                settingsModal.style.display = 'flex';
+            }
+        }
+
+        function closeSettings() {
+            settingsModal.style.display = 'none';
+            changePasswordForm.reset();
+            passwordError.textContent = '';
+        }
+
+        async function handleChangePassword(e) {
+            e.preventDefault();
+            const oldPassword = document.getElementById('oldPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (!oldPassword || !newPassword || !confirmPassword) {
+                passwordError.textContent = '请填写完整信息';
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                passwordError.textContent = '两次输入的新密码不一致';
+                return;
+            }
+
+            try {
+                passwordError.textContent = '';
+                const response = await fetch('/api/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `account=${encodeURIComponent(currentAccount)}&oldPassword=${encodeURIComponent(oldPassword)}&newPassword=${encodeURIComponent(newPassword)}`
+                });
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    alert('密码修改成功，请重新登录');
+                    logout();
+                } else {
+                    passwordError.textContent = data.message;
+                }
+            } catch (error) {
+                passwordError.textContent = '修改密码失败，请重试';
+                console.error(error);
+            }
+        }
+
+        async function openAdminPanel() {
+            if (!isAdmin) {
+                alert('只有管理员才能访问用户管理');
+                return;
+            }
+            adminPanel.style.display = 'flex';
+            await loadUserList();
+        }
+
+        function closeAdminPanel() {
+            adminPanel.style.display = 'none';
+        }
+
+        async function loadUserList() {
+            try {
+                const response = await fetch('/api/admin/users?account=admin&password=123456');
+                const users = await response.json();
+                userList.innerHTML = '';
+
+                if (users.length === 0) {
+                    userList.innerHTML = '<div class="loading">暂无用户</div>';
+                    return;
+                }
+
+                users.forEach(user => {
+                    const div = document.createElement('div');
+                    div.className = 'user-item';
+                    div.innerHTML = `
+                        <div class="user-info">
+                            <div class="user-name">${user.name}</div>
+                            <div class="user-account">账号: ${user.account}</div>
+                        </div>
+                        ${user.isAdmin ? '<span class="status-badge admin">管理员</span>' :
+                          user.activated ? '<span class="status-badge activated">已激活</span>' : '<span class="status-badge not-activated">未激活</span>'}
+                        ${!user.activated && !user.isAdmin ? `<button class="btn-delete" onclick="deleteUser('${user.account}')">删除</button>` : ''}
+                        ${!user.activated && !user.isAdmin ? `<button class="btn-activate" onclick="activateUser('${user.account}')">激活</button>` : ''}
+                        ${user.activated && !user.isAdmin ? `<button class="btn-deactivate" onclick="deactivateUser('${user.account}')">撤销</button>` : ''}
+                    `;
+                    userList.appendChild(div);
+                });
+            } catch (error) {
+                userList.innerHTML = '<div class="loading">加载用户列表失败</div>';
+                console.error(error);
+            }
+        }
+
+        async function activateUser(userAccount) {
+            if (!isAdmin) return;
+            try {
+                const response = await fetch('/api/admin/activate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `adminAccount=admin&adminPassword=123456&userAccount=${encodeURIComponent(userAccount)}`
+                });
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    alert('用户激活成功');
+                    await loadUserList();
+                } else {
+                    alert('激活失败: ' + data.message);
+                }
+            } catch (error) {
+                alert('激活失败，请重试');
+                console.error(error);
+            }
+        }
+
+        async function deleteUser(userAccount) {
+            if (!isAdmin) return;
+            if (!confirm('确定要删除该用户吗？')) return;
+            try {
+                const response = await fetch('/api/admin/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `adminAccount=admin&adminPassword=123456&userAccount=${encodeURIComponent(userAccount)}`
+                });
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    alert('用户删除成功');
+                    await loadUserList();
+                } else {
+                    alert('删除失败: ' + data.message);
+                }
+            } catch (error) {
+                alert('删除失败，请重试');
+                console.error(error);
+            }
+        }
+
+        async function deactivateUser(userAccount) {
+            if (!isAdmin) return;
+            if (!confirm('确定要撤销该用户的激活状态吗？')) return;
+            try {
+                const response = await fetch('/api/admin/deactivate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `adminAccount=admin&adminPassword=123456&userAccount=${encodeURIComponent(userAccount)}`
+                });
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    alert('用户已被撤销激活');
+                    await loadUserList();
+                } else {
+                    alert('撤销失败: ' + data.message);
+                }
+            } catch (error) {
+                alert('撤销失败，请重试');
+                console.error(error);
+            }
+        }
+
+        async function deleteMessage(index) {
+            if (!isAdmin) return;
+            if (!confirm('确定要删除这条消息吗？')) return;
+            try {
+                const response = await fetch('/api/admin/messages/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `adminAccount=admin&adminPassword=123456&messageId=${index}`
+                });
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    await loadMessages();
+                } else {
+                    alert('删除失败: ' + data.message);
+                }
+            } catch (error) {
+                alert('删除失败，请重试');
+                console.error(error);
+            }
+        }
+
+        function logout() {
+            if (messageRefreshInterval) {
+                clearInterval(messageRefreshInterval);
+                messageRefreshInterval = null;
+            }
+            if (currentAccount) {
+                fetch('/api/logout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `account=${encodeURIComponent(currentAccount)}`
+                });
+            }
+            currentUser = null;
+            currentAccount = null;
+            isAdmin = false;
+            localStorage.removeItem('chatUser');
+            chatContainer.style.display = 'none';
+            loginContainer.style.display = 'flex';
+            loginForm.reset();
+            loginError.textContent = '';
+        }
+
+        window.addEventListener('beforeunload', function() {
+            if (currentAccount) {
+                navigator.sendBeacon('/api/logout', `account=${encodeURIComponent(currentAccount)}`);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+# 编译产物
+*.exe
+*.obj
+*.o
+*.a
+*.lib
+*.dll
+*.so
+*.dylib
+
+# 构建目录
+build/
+cmake-build-debug/
+cmake-build-release/
+out/
+
+# IDE临时文件
+.vscode/
+.idea/
+*.swp
+*~
+*.sublime-*
+
+# 日志文件
+*.log
+
+# 系统文件
+.DS_Store
+Thumbs.db
