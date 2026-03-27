@@ -803,6 +803,7 @@
 
     <script>
         let currentUser = null;
+        let currentPassword = null;
         let currentAccount = null;
         let isAdmin = false;
         let messageRefreshInterval = null;
@@ -854,7 +855,9 @@
                     if (data.status === 'ok') {
                         currentUser = user.name;
                         currentAccount = user.account;
+                        currentPassword = user.password;
                         isAdmin = data.isAdmin || false;
+                        localStorage.setItem('chatUser', JSON.stringify({ name: user.name, account: user.account, password: user.password, isAdmin: isAdmin }));
                         currentUserSpan.textContent = currentUser;
                         adminBadge.style.display = isAdmin ? 'inline-block' : 'none';
                         loginContainer.style.display = 'none';
@@ -900,8 +903,9 @@
                 if (data.status === 'ok') {
                     currentUser = name;
                     currentAccount = account;
+                    currentPassword = password;
                     isAdmin = data.isAdmin || false;
-                    localStorage.setItem('chatUser', JSON.stringify({ name, account, isAdmin }));
+                    localStorage.setItem('chatUser', JSON.stringify({ name, account, password, isAdmin }));
                     currentUserSpan.textContent = currentUser;
                     adminBadge.style.display = isAdmin ? 'inline-block' : 'none';
                     loginContainer.style.display = 'none';
@@ -1121,8 +1125,15 @@
 
         async function loadUserList() {
             try {
-                const response = await fetch('/api/admin/users?account=admin&password=123456');
-                const users = await response.json();
+                const response = await fetch(`/api/admin/users?account=${encodeURIComponent(currentAccount)}&password=${encodeURIComponent(currentPassword)}`);
+                const data = await response.json();
+                
+                if (!response.ok || data.status === 'error') {
+                    userList.innerHTML = '<div class="loading">' + (data.message || '加载用户列表失败') + '</div>';
+                    return;
+                }
+                
+                const users = data;
                 userList.innerHTML = '';
 
                 if (users.length === 0) {
@@ -1158,7 +1169,7 @@
                 const response = await fetch('/api/admin/activate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `adminAccount=admin&adminPassword=123456&userAccount=${encodeURIComponent(userAccount)}`
+                    body: `adminAccount=${encodeURIComponent(currentAccount)}`
                 });
                 const data = await response.json();
                 if (data.status === 'ok') {
@@ -1180,7 +1191,7 @@
                 const response = await fetch('/api/admin/delete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `adminAccount=admin&adminPassword=123456&userAccount=${encodeURIComponent(userAccount)}`
+                    body: `adminAccount=${encodeURIComponent(currentAccount)}&adminPassword=${encodeURIComponent(currentPassword)}&userAccount=${encodeURIComponent(userAccount)}`
                 });
                 const data = await response.json();
                 if (data.status === 'ok') {
@@ -1202,7 +1213,7 @@
                 const response = await fetch('/api/admin/deactivate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `adminAccount=admin&adminPassword=123456&userAccount=${encodeURIComponent(userAccount)}`
+                    body: `adminAccount=${encodeURIComponent(currentAccount)}&adminPassword=${encodeURIComponent(currentPassword)}&userAccount=${encodeURIComponent(userAccount)}`
                 });
                 const data = await response.json();
                 if (data.status === 'ok') {
@@ -1224,7 +1235,7 @@
                 const response = await fetch('/api/admin/messages/delete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `adminAccount=admin&adminPassword=123456&messageId=${index}`
+                    body: `adminAccount=${encodeURIComponent(currentAccount)}&adminPassword=${encodeURIComponent(currentPassword)}&messageId=${index}`
                 });
                 const data = await response.json();
                 if (data.status === 'ok') {
@@ -1266,6 +1277,7 @@
             }
             currentUser = null;
             currentAccount = null;
+            currentPassword = null;
             isAdmin = false;
             localStorage.removeItem('chatUser');
             chatContainer.style.display = 'none';
