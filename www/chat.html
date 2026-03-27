@@ -271,6 +271,58 @@
             max-height: 300px;
             border-radius: 12px;
             margin-top: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .message-content img:hover {
+            transform: scale(1.02);
+        }
+
+        .image-preview-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0);
+            visibility: hidden;
+            opacity: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            cursor: pointer;
+            transition: background 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .image-preview-modal.active {
+            visibility: visible;
+            opacity: 1;
+            background: rgba(0, 0, 0, 0.9);
+        }
+
+        .image-preview-modal img {
+            max-width: 0;
+            max-height: 0;
+            border-radius: 8px;
+            object-fit: contain;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .image-preview-modal.active img {
+            max-width: 95%;
+            max-height: 95%;
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .message-content audio {
+            width: 250px;
+            margin-top: 8px;
+            border-radius: 20px;
         }
 
         .message-form {
@@ -696,7 +748,11 @@
             <form class="message-form" id="messageForm">
                 <div class="image-upload">
                     <input type="file" id="imageInput" accept="image/*">
-                    <button type="button"><i class="fas fa-image"></i></button>
+                    <button type="button" title="发送图片"><i class="fas fa-image"></i></button>
+                </div>
+                <div class="image-upload">
+                    <input type="file" id="musicInput" accept="audio/*">
+                    <button type="button" title="发送音乐"><i class="fas fa-music"></i></button>
                 </div>
                 <input type="text" id="messageInput" placeholder="输入消息..." required>
                 <button type="submit" class="btn">发送</button>
@@ -729,6 +785,10 @@
         </div>
     </div>
 
+    <div class="image-preview-modal" id="imagePreviewModal" onclick="closeImagePreview()">
+        <img id="previewImage" src="" alt="预览图片">
+    </div>
+
     <div class="modal" id="adminPanel">
         <div class="modal-content">
             <h3><i class="fas fa-users-cog"></i> 用户管理</h3>
@@ -756,6 +816,7 @@
         const messageForm = document.getElementById('messageForm');
         const messageInput = document.getElementById('messageInput');
         const imageInput = document.getElementById('imageInput');
+        const musicInput = document.getElementById('musicInput');
         const currentUserSpan = document.getElementById('currentUser');
         const onlineUserCount = document.getElementById('onlineUserCount');
         const adminBadge = document.getElementById('adminBadge');
@@ -764,9 +825,12 @@
         const userList = document.getElementById('userList');
         const changePasswordForm = document.getElementById('changePasswordForm');
         const passwordError = document.getElementById('passwordError');
+        const imagePreviewModal = document.getElementById('imagePreviewModal');
+        const previewImage = document.getElementById('previewImage');
 
         loginForm.addEventListener('submit', handleLogin);
         imageInput.addEventListener('change', handleImageUpload);
+        musicInput.addEventListener('change', handleMusicUpload);
         messageForm.addEventListener('submit', handleMessageSubmit);
         messageInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -864,12 +928,32 @@
                 imageInput.value = '';
                 try {
                     const formData = new FormData();
-                    formData.append('image', file);
+                    formData.append('file', file);
                     const response = await fetch('/api/upload', { method: 'POST', body: formData });
                     const data = await response.json();
-                    if (data.status === 'ok') {
+                    if (data.status === 'ok' && data.type === 'image') {
                         const imageUrl = data.url;
-                        const content = `<img src="${imageUrl}" alt="图片">`;
+                        const content = `<img src="${imageUrl}" alt="图片" onclick="openImagePreview('${imageUrl}')">`;
+                        await sendMessage(content);
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+        }
+
+        async function handleMusicUpload(e) {
+            const file = e.target.files[0];
+            if (file && currentUser) {
+                musicInput.value = '';
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    const response = await fetch('/api/upload', { method: 'POST', body: formData });
+                    const data = await response.json();
+                    if (data.status === 'ok' && data.type === 'music') {
+                        const musicUrl = data.url;
+                        const content = `<audio controls src="${musicUrl}"></audio>`;
                         await sendMessage(content);
                     }
                 } catch (error) {
@@ -921,12 +1005,16 @@
                 messages.forEach((msg, index) => {
                     const div = document.createElement('div');
                     div.className = `message ${msg.name === currentUser ? 'own' : 'other'}`;
+                    let content = msg.content;
+                    if (content.includes('<img') && !content.includes('onclick="openImagePreview')) {
+                        content = content.replace(/<img src="([^"]+)" alt="图片">/g, '<img src="$1" alt="图片" onclick="openImagePreview(\'$1\')">');
+                    }
                     div.innerHTML = `
                         <div class="message-header">
                             <span>${msg.name} - ${msg.timestamp}</span>
                             ${isAdmin ? `<button class="delete-btn" onclick="deleteMessage(${index})">删除</button>` : ''}
                         </div>
-                        <div class="message-content">${msg.content}</div>
+                        <div class="message-content">${content}</div>
                     `;
                     messageList.appendChild(div);
                 });
@@ -1148,6 +1236,20 @@
                 alert('删除失败，请重试');
                 console.error(error);
             }
+        }
+
+        function openImagePreview(src) {
+            previewImage.src = src;
+            imagePreviewModal.classList.add('active');
+        }
+
+        function closeImagePreview() {
+            imagePreviewModal.classList.remove('active');
+            setTimeout(() => {
+                if (!imagePreviewModal.classList.contains('active')) {
+                    previewImage.src = '';
+                }
+            }, 300);
         }
 
         function logout() {

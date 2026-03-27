@@ -665,12 +665,25 @@ int main() {
     });
 
     svr.Post("/api/upload", [](const httplib::Request& req, httplib::Response& res) {
-        if (req.form.has_file("image")) {
-            auto file = req.form.get_file("image");
+        if (req.form.has_file("file")) {
+            auto file = req.form.get_file("file");
             std::string randomName = generateRandomString(10);
             std::string extension = getFileExtension(file.filename);
             std::string filename = randomName + extension;
-            std::string filePath = "./data/images/" + filename;
+            
+            std::string fileType = "";
+            if (extension == ".mp3" || extension == ".wav" || extension == ".ogg" || extension == ".m4a" || extension == ".flac") {
+                fileType = "music";
+            } else if (extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".gif" || extension == ".webp" || extension == ".bmp") {
+                fileType = "image";
+            }
+            
+            std::string filePath;
+            if (fileType == "music") {
+                filePath = "./data/music/" + filename;
+            } else {
+                filePath = "./data/images/" + filename;
+            }
 
             std::ofstream outFile(filePath, std::ios::binary);
             if (outFile.is_open()) {
@@ -679,13 +692,20 @@ int main() {
 
                 json successJson;
                 successJson["status"] = "ok";
-                successJson["message"] = "图片上传成功";
-                successJson["url"] = "/data/images/" + filename;
+                if (fileType == "music") {
+                    successJson["message"] = "音乐上传成功";
+                    successJson["url"] = "/data/music/" + filename;
+                    successJson["type"] = "music";
+                } else {
+                    successJson["message"] = "图片上传成功";
+                    successJson["url"] = "/data/images/" + filename;
+                    successJson["type"] = "image";
+                }
                 res.set_content(successJson.dump(4), "application/json; charset=utf-8");
             } else {
                 json errorJson;
                 errorJson["status"] = "error";
-                errorJson["message"] = "图片保存失败";
+                errorJson["message"] = "文件保存失败";
                 res.set_content(errorJson.dump(4), "application/json; charset=utf-8");
             }
         } else {
